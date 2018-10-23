@@ -37,13 +37,13 @@ def csdata_helper(meta_type, id_folder):
     key = meta_type.key
     if key not in CSH_DATA:
         CSH_DATA[key] = {
-                0 : config["cs"].get(meta_type.settings["cs"], [])
+                0 : config["cs"].get(meta_type["cs"], [])
             }
     if id_folder not in CSH_DATA[key]:
         folder_settings = folder_metaset_helper(id_folder, meta_type.key)
-        folder_cs = folder_settings.get("cs", False)
+        folder_cs = folder_settings.get("cs", "urn:special:nonexistent-cs")
         CSH_DATA[key][id_folder] = config["cs"].get(folder_cs, [])
-    return CSH_DATA[key].get(id_folder, None) or CSH_DATA[key][0]
+    return CSH_DATA[key].get(id_folder, False) or CSH_DATA[key][0]
 
 
 CSA_DATA = {}
@@ -56,8 +56,8 @@ def csa_helper(meta_type, id_folder, value, lang):
     if not value in CSA_DATA[key][id_folder]:
         for csval, settings in csdata_helper(meta_type, id_folder):
             if csval == value:
-                    CSA_DATA[key][id_folder][value] = settings.get("aliases", {})
-                    break
+                CSA_DATA[key][id_folder][value] = settings.get("aliases", {})
+                break
         else:
             CSA_DATA[key][id_folder][value] = {}
     return CSA_DATA[key][id_folder][value].get(lang, value)
@@ -104,6 +104,9 @@ def format_integer(meta_type, value, **kwargs):
 
     if meta_type.key == "media_type":
         return get_media_type_name(value).upper()
+
+    if meta_type.key == "id_storage":
+        return storages[value].__repr__().lstrip("storage ")
 
     return value
 
@@ -154,7 +157,10 @@ def format_fract(meta_type, value, **kwargs):
 def format_select(meta_type, value, **kwargs):
     lang = kwargs.get("lang", "en")
     full = kwargs.get("full", False)
-    id_folder = kwargs["parent"].meta.get("id_folder", 0)
+    try:
+        id_folder = kwargs["parent"].meta["id_folder"]
+    except KeyError:
+        id_folder = 0
     if full:
         result = []
         for csval, settings in csdata_helper(meta_type, id_folder):

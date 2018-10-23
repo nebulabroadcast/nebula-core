@@ -78,10 +78,15 @@ def validate_list(meta_type, value):
 def validate_color(meta_type, value):
     if not value:
         return 0
-    base=10
-    if type(value) == str and value.startswith("#"):
+    if type(value) == int:
+        return value
+    if type(value) != str:
+        return 0
+    if value.startswith("#"):
         base = 16
         value = value.lstrip("#")
+    else:
+        base=10
     try:
         value = int(value, base)
     except ValueError:
