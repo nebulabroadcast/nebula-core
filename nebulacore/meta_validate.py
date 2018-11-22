@@ -68,12 +68,10 @@ def validate_fract(meta_type, value):
     return value
 
 def validate_select(meta_type, value):
-    #TODO
-    return value
+    return str(value)
 
 def validate_list(meta_type, value):
-    #TODO
-    return value
+    return [str(v) for v in value] if type(value) == list else [str(value)]
 
 def validate_color(meta_type, value):
     if not value:

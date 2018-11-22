@@ -175,9 +175,6 @@ class Storage(object):
     def __init__(self, id,  **kwargs):
         self.id = int(id)
         self.settings = kwargs
-        self.is_dead = False
-        self.last_check = 0
-        self.check_interval = 2
 
     def __getitem__(self, key):
         return self.settings[key]

@@ -1,4 +1,5 @@
 import pprint
+import copy
 
 from .common import *
 from .constants import *
@@ -64,7 +65,7 @@ class BaseObject(object):
         if value == self[key]:
             return True # No change
         self.meta_changed = True
-        if meta_type["fulltext"]:
+        if meta_type["fulltext"] or key == "subclips":
             self.text_changed = True
         if not value and key in self.meta:
             del self.meta[key]
@@ -171,9 +172,16 @@ class AssetMixIn(object):
         return dur
 
     @property
+    def fps(self):
+        n, d = [int(k) for k in self.meta.get("fps", "25/1").split("/")]
+        return n/d
+
+    @property
     def proxy_url(self):
-        base_url = config.get("proxy_url", "/{id1000}/{id}.mp4")
-        data = self.meta
+        if not self.id:
+            return ""
+        base_url = config.get("proxy_url", "/proxy/{id1000:04d}/{id}.mp4")
+        data = copy.copy(self.meta)
         data["id1000"] = int(self.id/1000)
         return base_url.format(**data)
 
@@ -231,6 +239,10 @@ class ItemMixIn(object):
         return dur
 
     @property
+    def fps(self):
+        return self.asset.fps
+
+    @property
     def file_path(self):
         if not self["id_asset"]:
             return ""
@@ -270,10 +282,12 @@ class UserMixIn(object):
     def set_password(self, password):
         self["password"] = get_hash(password)
 
-    def has_right(self, key, val=True):
+    def has_right(self, key, val=True, anyval=False):
         if self["is_admin"]:
             return True
         key = "can/{}".format(key)
         if not self[key]:
             return False
+        if anyval:
+            return True
         return self[key] == True or (type(self[key]) == list and val in self[key])

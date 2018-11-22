@@ -17,7 +17,6 @@ def shorten(instr, nlen):
         return line
     return line[:nlen] + "..."
 
-
 #
 # CS Caching
 #
@@ -62,7 +61,6 @@ def csa_helper(meta_type, id_folder, value, lang):
             CSA_DATA[key][id_folder][value] = {}
     return CSA_DATA[key][id_folder][value].get(lang, value)
 
-
 #
 # Formating helpers
 #
@@ -77,21 +75,6 @@ def format_integer(meta_type, value, **kwargs):
     value = int(value)
     if not value and meta_type.settings.get("hide_null", False):
         return ""
-
-    #TODO: DEPRECATED??
-    if kwargs.get("mode", False) == "hub":
-        if meta_type.key == "id_folder":
-            fconfig = config["folders"].get(value, {"color" : 0xaaaaaa, "title" : "-"})
-            return "<span class='label' style='background-color : #{:06x}'>{}</span>".format(fconfig["color"], fconfig["title"])
-        if meta_type.key == "qc/state":
-            c, i = {
-                    0 : ["#a0a0a0", "flag-outline"],
-                    1 : ["#cc0000", "flag-outline"],
-                    2 : ["#00cc00", "flag-outline"],
-                    3 : ["#cc0000", "flag"],
-                    4 : ["#00cc00", "flag"],
-                }[value]
-            return "<span class='label' style='background-color : {}'><i class='mdi mdi-{}'></i></span>".format(c,i)
 
     if meta_type.key == "file/size":
         return format_filesize(value)
@@ -122,24 +105,12 @@ def format_numeric(meta_type, value, **kwargs):
 
 def format_boolean(meta_type, value, **kwargs):
     value = int(value)
-    #TODO: Deprecated?
-    if kwargs.get("mode", False) == "hub":
-        if meta_type.key == "promoted":
-            return [
-                    "<i class=\"mdi mdi-star-outline\"></i>",
-                    "<i class=\"mdi mdi-star\"></i>"
-                ][value]
-        else:
-            return [
-                    "<i class=\"mdi mdi-checkbox-blank-outline\"></i>",
-                    "<i class=\"mdi mdi-checkbox-marked-outline\"></i>"
-                ][value]
     return ["no", "yes"][bool(value)]
 
 
 def format_datetime(meta_type, value, **kwargs):
     time_format = meta_type.settings.get("format", False) or kwargs.get("format", "%Y-%m-%d %H:%M")
-    return format_time(value, time_format)
+    return format_time(value, time_format, never_placeholder=kwargs.get("never_placeholder", "never"))
 
 
 def format_timecode(meta_type, value, **kwargs):
@@ -155,6 +126,7 @@ def format_fract(meta_type, value, **kwargs):
 
 
 def format_select(meta_type, value, **kwargs):
+    value = str(value)
     lang = kwargs.get("lang", "en")
     full = kwargs.get("full", False)
     try:
@@ -163,19 +135,31 @@ def format_select(meta_type, value, **kwargs):
         id_folder = 0
     if full:
         result = []
+        has_zero = has_selected = False
         for csval, settings in csdata_helper(meta_type, id_folder):
+            if csval == "0":
+                has_zero = True
+            if value == csval:
+                has_selected = True
             result.append({
                     "value" : csval,
                     "alias" : settings.get("aliases", {}).get(lang) or csval,
                     "selected" : value == csval
                 })
-        return sorted(result, key=lambda x: str(x["value"])) if full else "---"
+        result.sort(key=lambda x: str(x["value"]))
+        if not has_selected:
+            if has_zero:
+                result[0]["selected"] = True
+            else:
+                result.insert(0, {"value" : "", "alias" : "", "selected": True})
+        return result
     else:
         return csa_helper(meta_type, id_folder, value, lang)
 
 
 def format_list(meta_type, value, **kwargs):
-    return value # TODO
+    return ", ".join(value)
+
 
 def format_color(meta_type, value, **kwargs):
     return "#{0:06X}".format(value)
