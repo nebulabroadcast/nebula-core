@@ -207,7 +207,7 @@ class Storage(object):
     def __len__(self):
         if self["protocol"] == "local" and os.path.isdir(self["path"]):
             return True
-        return ismount(self.local_path) and len(os.listdir(self.local_path)) != 0
+        return os.path.isdir(self.local_path) and ismount(self.local_path) and len(os.listdir(self.local_path)) != 0
 
 
 class Storages(object):
