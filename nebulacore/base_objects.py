@@ -201,12 +201,12 @@ class ItemMixIn(object):
     def mark_in(self, new_val=False):
         if new_val:
             self["mark_in"] = new_val
-        return float(self["mark_in"])
+        return float(self["mark_in"] or 0)
 
     def mark_out(self, new_val=False):
         if new_val:
             self["mark_out"] = new_val
-        return float(self["mark_out"])
+        return float(self["mark_out"] or 0)
 
     @property
     def asset(self):

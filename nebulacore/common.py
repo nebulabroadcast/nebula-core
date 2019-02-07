@@ -6,10 +6,7 @@ import time
 import hashlib
 import socket
 
-from xml.etree import ElementTree as ET
-
 from nxtools import *
-
 from .constants import *
 
 logging.show_time = True
@@ -58,6 +55,7 @@ class Config(dict):
             if os.path.exists(settings_file):
                 try:
                     settings.update(json.load(open(settings_file)))
+                    break
                 except Exception:
                     log_traceback(handlers=False)
 
@@ -181,6 +179,9 @@ class Storage(object):
 
     def __repr__(self):
         return "storage ID:{} ({})".format(self.id, self["title"])
+
+    def get(self, key, default=None):
+        return self.settings.get(key, default)
 
     @property
     def title(self):
