@@ -12,6 +12,8 @@ from .constants import *
 logging.show_time = True
 
 
+
+
 if PLATFORM == "windows":
     python_cmd = "c:\\python27\python.exe"
     def ismount(path):
@@ -28,7 +30,7 @@ class Config(dict):
     def __init__(self):
         super(Config, self).__init__()
         self["site_name"] = "Unnamed"
-        self["user"] = "Nebula"              # Service identifier. Should be overwritten by service/script.
+        self["user"] = "nebula"              # Service identifier. Should be overwritten by service/script.
         self["host"] = socket.gethostname()  # Machine hostname
         self["storages"] = {}
         self["rights"] = {}
@@ -51,6 +53,10 @@ class Config(dict):
                     local_settings_path
                 ]
         settings = {}
+        if "--daemon" in sys.argv:
+            logging.file = os.devnull
+            settings["daemon_mode"] = True
+
         for settings_file in settings_files:
             if os.path.exists(settings_file):
                 try:
@@ -200,9 +206,6 @@ class Storage(object):
             return self["path"]
         elif PLATFORM == "unix":
             return os.path.join("/mnt/{}_{:02d}".format(config["site_name"], self.id))
-        #elif PLATFORM == "windows":
-            #TODO
-            #logging.warning("Unsuported {} protocol '{}' on this platform.".format(self, self["protocol"]))
         return ""
 
     def __len__(self):

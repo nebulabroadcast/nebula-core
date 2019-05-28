@@ -1,3 +1,4 @@
+import re
 import time
 
 from nxtools import *
@@ -16,6 +17,18 @@ def shorten(instr, nlen):
     if len(line) < 100:
         return line
     return line[:nlen] + "..."
+
+
+def filter_match(f, r):
+    """OR"""
+    if type(f) == list:
+        res = False
+        for fl in f:
+            if re.match(f, r):
+                return True
+        return False
+    else:
+        return re.match(f, r)
 
 #
 # CS Caching
@@ -40,8 +53,13 @@ def csdata_helper(meta_type, id_folder):
             }
     if id_folder not in CSH_DATA[key]:
         folder_settings = folder_metaset_helper(id_folder, meta_type.key)
-        folder_cs = folder_settings.get("cs", "urn:special:nonexistent-cs")
-        CSH_DATA[key][id_folder] = config["cs"].get(folder_cs, [])
+        folder_cs = folder_settings.get("cs", meta_type.get("cs", "urn:special:nonexistent-cs"))
+        folder_filter = folder_settings.get("filter")
+        fdata = config["cs"].get(folder_cs, [])
+        if folder_filter:
+            CSH_DATA[key][id_folder] = [r for r in fdata if filter_match(folder_filter, r[0])]
+        else:
+            CSH_DATA[key][id_folder] = fdata
     return CSH_DATA[key].get(id_folder, False) or CSH_DATA[key][0]
 
 

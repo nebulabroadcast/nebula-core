@@ -45,6 +45,9 @@ class MetaType(object):
     def __setitem__(self, key, value):
         self.settings[key] = value
 
+    def get(self, value, default=None):
+        return self.settings.get(value, default)
+
     @property
     def default(self):
         if "default" in self.settings:
