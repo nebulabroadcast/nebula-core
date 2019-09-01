@@ -90,6 +90,8 @@ class BaseObject(object):
         if kwargs.get("set_mtime", True):
             self["mtime"] = time.time()
         for key in self.required:
+            if (not key in self.meta) and (key in self.defaults):
+                self[key] = self.defaults[key]
             assert key in self.meta, "Unable to save {}. {} is required".format(self, key)
 
     def delete(self, **kwargs):
@@ -275,7 +277,7 @@ class UserMixIn(object):
 
     def __getitem__(self, key):
         if key == "title":
-            return self.meta["login"]
+            return self.meta.get("login", "Anonymous")
         return super(UserMixIn, self).__getitem__(key)
 
     def set_password(self, password):

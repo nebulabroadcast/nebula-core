@@ -25,7 +25,7 @@ DEFAULT_RESPONSE_MESSAGES = {
 
         400 : "Bad request",
         401 : "Unauthorised",
-        403 : "Acces denied",
+        403 : "Access denied",
         404 : "Not found",
         423 : "Locked",
 
