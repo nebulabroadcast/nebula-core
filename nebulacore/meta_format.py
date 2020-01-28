@@ -168,22 +168,21 @@ def format_select(meta_type, value, **kwargs):
                     "role" : role,
                     "indent" : 0
                 })
-        result.sort(key=lambda x: str(x["value"]))
+        if meta_type.get("mode") == "tree":
+            sort_mode = lambda x: "".join([n.zfill(5) for n in x["value"].split(".")])
+            result.sort(key=sort_mode)
+            tree_indent(result)
+        else:
+            if meta_type.get("order") == "alias":
+                sort_mode = lambda x: unaccent(str(x["alias"]))
+            else:
+                sort_mode = lambda x: unaccent(str(x["value"]))
+            result.sort(key=sort_mode)
         if not has_selected:
             if has_zero:
                 result[0]["selected"] = True
             else:
                 result.insert(0, {"value" : "", "alias" : "", "selected": True, "role" : "option"})
-        if meta_type.get("mode") == "tree":
-            sort_mode = lambda x: "".join([n.zfill(3) for n in x["value"].split(".")])
-            result.sort(key=sort_mode)
-            tree_indent(result)
-        else:
-            if meta_type.get("order") == "alias":
-                sort_mode = lambda x: str(x["alias"])
-            else:
-                sort_mode = lambda x: str(x["value"])
-            result.sort(key=sort_mode)
         return result
 
     elif result == "description":
@@ -240,9 +239,9 @@ def format_list(meta_type, value, **kwargs):
             tree_indent(result)
         else:
             if meta_type.get("order") == "alias":
-                sort_mode = lambda x: str(x["alias"])
+                sort_mode = lambda x: unaccent(str(x["alias"]))
             else:
-                sort_mode = lambda x: str(x["value"])
+                sort_mode = lambda x: unaccent(str(x["value"]))
             result.sort(key=sort_mode)
         return result
 

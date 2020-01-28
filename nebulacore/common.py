@@ -213,10 +213,29 @@ class Storage(object):
             return True
         return os.path.isdir(self.local_path) and ismount(self.local_path) and len(os.listdir(self.local_path)) != 0
 
+class UnknownStorage(object):
+    def __init__(self, id, **kwargs):
+        self.id = int(id)
+        self.title = "Unknown storage {}".format(self.id)
+
+    def __repr__(self):
+        return self.title
+
+    def __getitem__(self, key):
+        return False
+
+    @property
+    def local_path(self):
+        return ""
+
+    def __len__(self):
+        return 0
+
 
 class Storages(object):
     def __getitem__(self, key):
-        #TODO error_handling
+        if not key in config["storages"]:
+            return UnknownStorage(key)
         return Storage(key, **config["storages"][key])
 
     def __iter__(self):
