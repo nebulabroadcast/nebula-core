@@ -3,7 +3,7 @@ import copy
 
 from .common import *
 from .constants import *
-from .metadata import meta_types
+from .metadata import MetaTypes
 
 __all__ = ["BaseObject", "AssetMixIn", "ItemMixIn", "BinMixIn", "EventMixIn", "UserMixIn"]
 
@@ -41,6 +41,16 @@ class BaseObject(object):
         return self.meta.get("id", False)
 
     @property
+    def id_folder(self):
+        return self.meta.get("id_folder")
+
+    @property
+    def meta_types(self):
+        # If the object is inside a folder, use the per-folder metadata overrides.
+        # This allows things like filters and defaults to be overridden per-folder.
+        return MetaTypes(self.id_folder)
+
+    @property
     def object_type(self):
         return self.__class__.__name__.lower()
 
@@ -56,11 +66,11 @@ class BaseObject(object):
         key = key.lower().strip()
         if key == "_duration":
             return self.duration
-        return self.meta.get(key, meta_types[key].default)
+        return self.meta.get(key, self.meta_types[key].default)
 
     def __setitem__(self, key, value):
         key = key.lower().strip()
-        meta_type = meta_types[key]
+        meta_type = self.meta_types[key]
         value = meta_type.validate(value)
         if value == self[key]:
             return True # No change
@@ -124,7 +134,7 @@ class BaseObject(object):
 
     def show(self, key, **kwargs):
         kwargs["parent"] = self
-        return meta_types[key.lstrip("_")].show(self[key], **kwargs)
+        return self.meta_types[key.lstrip("_")].show(self[key], **kwargs)
 
     def show_meta(self):
         return pprint.pformat(self.meta)
@@ -194,11 +204,19 @@ class ItemMixIn(object):
     def __getitem__(self, key):
         key = key.lower().strip()
         if not key in self.meta:
-            if key not in ["id_asset"] and self.asset:
+            if key == "id_asset":
+                return 0
+            elif self.asset:
                 return self.asset[key]
             else:
-                return meta_types[key].default
+                return self.meta_types[key].default
         return self.meta[key]
+
+    @property
+    def id_folder(self):
+        if self.asset:
+            return self.asset.id_folder
+        return self.meta.get("id_folder")
 
     def mark_in(self, new_val=False):
         if new_val:

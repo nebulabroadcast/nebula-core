@@ -25,6 +25,7 @@ file_types = {
     "video": VIDEO,
     "m3u8" : VIDEO,
     "mpd"  : VIDEO,
+    "webm" : VIDEO,
 
     "wav"  : AUDIO,
     "aiff" : AUDIO,

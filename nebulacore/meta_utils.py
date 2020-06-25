@@ -11,7 +11,7 @@ def shorten(instr, nlen):
 
 def filter_match(f, r):
     """OR"""
-    if type(f) == list:
+    if type(f) in [list, tuple]:
         res = False
         for fl in f:
             if re.match(fl, r):
@@ -50,76 +50,23 @@ def tree_indent(data):
 # CS Caching
 #
 
-FMH_DATA = {} # id_folder-->key
-def folder_metaset_helper(id_folder, key):
-    if id_folder not in FMH_DATA:
-        d = {}
-        for fkey, settings in config["folders"].get(id_folder, {}).get("meta_set", []):
-            d[fkey] = settings or {}
-        FMH_DATA[id_folder] = d
-    return FMH_DATA.get(id_folder, {}).get(key, {})
+class CachedObject(type):
+    _cache = None
 
+    @classmethod
+    def clear_cache(cls):
+        cls._cache = None
 
-CSH_DATA = {} # key --> id_folder
-def csdata_helper(meta_type, id_folder):
-    key = meta_type.key
-    if key not in CSH_DATA:
-        CSH_DATA[key] = {
-                0 : config["cs"].get(meta_type["cs"], [])
-            }
-    if id_folder not in CSH_DATA[key]:
-        folder_settings = folder_metaset_helper(id_folder, meta_type.key)
-        folder_cs = folder_settings.get("cs", meta_type.get("cs", "urn:special:nonexistent-cs"))
-        folder_filter = folder_settings.get("filter")
-        fdata = config["cs"].get(folder_cs, [])
-        if folder_filter:
-            CSH_DATA[key][id_folder] = [r for r in fdata if filter_match(folder_filter, r[0])]
-        else:
-            CSH_DATA[key][id_folder] = fdata
-    return CSH_DATA[key].get(id_folder, False) or CSH_DATA[key][0]
+    def __call__(cls, *args):
+        if not cls._cache:
+            cls._cache = {}
+        key = tuple(args)
+        if key not in cls._cache:
+            cls._cache[key] = super().__call__(*args)
+        return cls._cache[key]
 
-
-CSA_DATA = {}
-def csa_helper(meta_type, id_folder, value, lang):
-    key = meta_type.key
-    if not key in CSA_DATA:
-        CSA_DATA[key] = {}
-    if not id_folder in CSA_DATA[key]:
-        CSA_DATA[key][id_folder] = {}
-    if not value in CSA_DATA[key][id_folder]:
-        for csval, settings in csdata_helper(meta_type, id_folder):
-            if csval == value:
-                settings = settings or {}
-                CSA_DATA[key][id_folder][value] = settings.get("aliases", {})
-                break
-        else:
-            for csval, settings in csdata_helper(meta_type, 0):
-                if csval == value:
-                    settings = settings or {}
-                    CSA_DATA[key][id_folder][value] = settings.get("aliases", {})
-                    break
-            else:
-                CSA_DATA[key][id_folder][value] = {}
-    return CSA_DATA[key][id_folder][value].get(lang) or CSA_DATA[key][id_folder][value].get("en", value)
-
-
-CSD_DATA = {}
-def csd_helper(meta_type, id_folder, value, lang):
-    key = meta_type.key
-    if not key in CSD_DATA:
-        CSD_DATA[key] = {}
-    if not id_folder in CSD_DATA[key]:
-        CSD_DATA[key][id_folder] = {}
-    if not value in CSD_DATA[key][id_folder]:
-        for csval, settings in csdata_helper(meta_type, id_folder):
-            if csval == value:
-                CSD_DATA[key][id_folder][value] = settings.get("description", {})
-                break
-        else:
-            for csval, settings in csdata_helper(meta_type, 0):
-                if csval == value:
-                    CSD_DATA[key][id_folder][value] = settings.get("description", {})
-                    break
-            else:
-                CSD_DATA[key][id_folder][value] = {}
-    return CSD_DATA[key][id_folder][value].get(lang) or CSD_DATA[key][id_folder][value].get("en", value)
+# Moved to metadata, but this stub needs to live here so older firefly
+# doesn't break.
+def clear_cs_cache():
+    from . import metadata
+    metadata.clear_cs_cache()

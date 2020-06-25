@@ -133,37 +133,29 @@ def format_select(meta_type, value, **kwargs):
     lang = kwargs.get("language", config.get("language", "en"))
     result = kwargs.get("result", "alias")
 
-    try:
-        id_folder = kwargs.get("id_folder") or kwargs["parent"].meta["id_folder"]
-    except KeyError:
-        id_folder = 0
+    cs = meta_type.cs
 
     if result == "brief":
         return {
                 "value" : value,
-                "alias" : csa_helper(meta_type, id_folder, value, lang)
+                "alias" : cs.alias(value, lang)
             }
 
     elif result == "full":
         result = []
         has_zero = has_selected = False
-        for csval, settings in csdata_helper(meta_type, id_folder):
-            settings = settings or {}
+        for csval in cs.data:
             if csval == "0":
                 has_zero = True
             if value == csval:
                 has_selected = True
-            aliases = {"en" : csval}
-            aliases.update(settings.get("aliases", {}))
-            description = {"en" : ""}
-            description.update(settings.get("description", {}))
-            role = settings.get("role", "option")
+            role = cs.role(csval)
             if role == "hidden":
                 continue
             result.append({
                     "value" : csval,
-                    "alias" : aliases.get(lang, aliases["en"]),
-                    "description" : description.get(lang, description["en"]),
+                    "alias" : cs.alias(csval, lang),
+                    "description" : cs.description(csval, lang),
                     "selected" : value == csval,
                     "role" : role,
                     "indent" : 0
@@ -186,10 +178,10 @@ def format_select(meta_type, value, **kwargs):
         return result
 
     elif result == "description":
-        return csd_helper(meta_type, id_folder, value, lang)
+        return cs.description(value, lang)
 
     else: # alias
-        return csa_helper(meta_type, id_folder, value, lang)
+        return cs.alias(value, lang)
 
 
 def format_list(meta_type, value, **kwargs):
@@ -203,32 +195,24 @@ def format_list(meta_type, value, **kwargs):
     lang = kwargs.get("language", config.get("language", "en"))
     result = kwargs.get("result", "alias")
 
-    try:
-        id_folder = kwargs.get("id_folder") or kwargs["parent"].meta["id_folder"]
-    except KeyError:
-        id_folder = 0
+    cs = meta_type.cs
 
     if result == "brief":
         return {
                 "value" : value,
-                "alias" : ", ".join([csa_helper(meta_type, id_folder, v, lang) for v in value])
+                "alias" : ", ".join(cs.aliases(lang)),
         }
 
     elif result == "full":
         result = []
-        for csval, settings in csdata_helper(meta_type, id_folder):
-            settings = settings or {}
-            aliases = {"en" : csval}
-            aliases.update(settings.get("aliases", {}))
-            description = {"en" : ""}
-            description.update(settings.get("description", {}))
-            role = settings.get("role", "option")
+        for csval in cs.data:
+            role = cs.role(csval)
             if role == "hidden":
                 continue
             result.append({
                     "value" : csval,
-                    "alias" : aliases.get(lang, aliases["en"]),
-                    "description" : description.get(lang, description["en"]),
+                    "alias" : cs.alias(csval, lang),
+                    "description" : cs.description(csval, lang),
                     "selected" : csval in value,
                     "role" : role,
                     "indent" : 0
@@ -247,11 +231,11 @@ def format_list(meta_type, value, **kwargs):
 
     elif result == "description":
         if len(value):
-            return csd_helper(meta_type, id_folder, value[0], lang)
+            return cs.description(value[0], lang)
         return ""
 
     else: # alias
-        return ", ".join([csa_helper(meta_type, id_folder, v, lang) for v in value])
+        return ", ".join(cs.aliases(lang))
 
 
 def format_color(meta_type, value, **kwargs):
