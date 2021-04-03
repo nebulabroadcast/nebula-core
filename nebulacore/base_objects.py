@@ -17,8 +17,8 @@ class BaseObject(object):
         self.meta = {}
         meta = kwargs.get("meta", {})
         if id:
-            assert type(id) == int, "{} ID must be integer".format(self.object_type)
-        assert meta is not None, "Unable to load {}.  Meta must not be 'None'.".format(self.object_type)
+            assert type(id) == int, f"{self.object_type} ID must be integer"
+        assert meta is not None, f"Unable to load {self.object_type}. Meta must not be 'None'"
         assert hasattr(meta, "keys"), "Incorrect meta!"
         for key in meta:
             self.meta[key] = meta[key]
@@ -95,14 +95,14 @@ class BaseObject(object):
 
     def save(self, **kwargs):
         if not kwargs.get("silent", False):
-            logging.debug("Saving {}".format(self))
+            logging.debug(f"Saving {self}")
         self["ctime"] = self["ctime"] or time.time()
         if kwargs.get("set_mtime", True):
             self["mtime"] = time.time()
         for key in self.required:
             if (not key in self.meta) and (key in self.defaults):
                 self[key] = self.defaults[key]
-            assert key in self.meta, "Unable to save {}. {} is required".format(self, key)
+            assert key in self.meta, f"Unable to save {self}. {key} is required"
 
     def delete(self, **kwargs):
         assert self.id > 0, "Unable to delete unsaved object"
@@ -115,18 +115,15 @@ class BaseObject(object):
 
     def __repr__(self):
         if self.id:
-            result = "{} ID:{}".format(self.object_type, self.id)
+            result = f"{self.object_type} ID:{self.id}"
         else:
-            result = "new {}".format(self.object_type)
+            result = f"new {self.object_type}"
         if self.object_type == "item" and not hasattr(self, "_asset"):
             title = ""
         else:
-            if PYTHON_VERSION >= 3:
-                title = self["title"]
-            else:
-                title = self.meta.get("title", "").encode("utf8", "replace")
+            title = self["title"]
         if title:
-            result += " ({})".format(title)
+            result += f" ({title})"
         return result
 
     def __len__(self):
@@ -304,7 +301,7 @@ class UserMixIn(object):
     def has_right(self, key, val=True, anyval=False):
         if self["is_admin"]:
             return True
-        key = "can/{}".format(key)
+        key = f"can/{key}"
         if not self[key]:
             return False
         if anyval:

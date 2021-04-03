@@ -6,7 +6,7 @@ from .meta_validate import validators
 from .meta_format import humanizers
 from .meta_utils import filter_match, CachedObject
 
-__all__ = ["meta_types", "MetaType"]
+__all__ = ["meta_types", "MetaType", "ClassificationScheme"]
 
 
 default_meta_type = {
@@ -37,16 +37,17 @@ defaults = {
 class ClassificationScheme(metaclass=CachedObject):
     def __init__(self, urn, filter=None):
         self.urn = urn
-        csdata = config["cs"].get(urn, [])
+        self.csdata = dict(config["cs"].get(urn, []))
         if filter:
-            csdata = [r for r in csdata if filter_match(filter, r[0])]
-        self.data = dict(csdata)
+            self.data = [r for r in self.csdata if filter_match(filter, r)]
+        else:
+            self.data = list(self.csdata.keys())
 
     def __getitem__(self, value):
-        return self.data.get(value, {})
+        return self.csdata.get(value, {})
 
     def __repr__(self):
-        return "<ClassificationScheme: {} ({} items)>".format("urn", len(self.data))
+        return f"<ClassificationScheme: {self.urn} ({len(self.data)} items)>"
 
     def _lang(self, key, value, lang):
         langs = self[value].get(key, {})

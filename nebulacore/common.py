@@ -10,16 +10,13 @@ from nxtools import *
 from .constants import *
 
 logging.show_time = True
-
-
+logging.user = "nebula"
 
 
 if PLATFORM == "windows":
-    python_cmd = "c:\\python27\python.exe"
     def ismount(path):
         return True
 else:
-    python_cmd = "python"
     from posixpath import ismount
 
 #
@@ -64,6 +61,11 @@ class Config(dict):
                     break
                 except Exception:
                     log_traceback(handlers=False)
+
+        for key, value in dict(os.environ).items():
+            if key.lower().startswith("nebula_"):
+                key = key.lower().replace("nebula_", "", 1)
+                settings[key] = value
 
         if not settings:
             critical_error("Unable to open site settings")
@@ -125,55 +127,7 @@ class NebulaResponse(object):
     def __len__(self):
         return self.is_success
 
-#
-# Messaging
-#
 
-class Messaging():
-    def __init__(self):
-        self.configured = False
-
-    def configure(self):
-        self.addr = config.get("seismic_addr", "224.168.2.8")
-        self.port = int(config.get("seismic_port", 42112))
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 255)
-        self.configured = True
-
-    def send(self, method, **data):
-        if not self.configured:
-            return
-        try:
-            self.sock.sendto(
-                encode_if_py3(
-                    json.dumps([
-                        time.time(),
-                        config["site_name"],
-                        config["host"],
-                        method,
-                        data
-                        ])
-                    ),
-                (self.addr, self.port)
-                )
-        except Exception:
-            log_traceback(handlers=False)
-
-    def __del__(self):
-        if self.configured:
-            self.sock.close()
-
-messaging = Messaging()
-
-#
-# Logging
-#
-
-def seismic_log(**kwargs):
-    messaging.send("log", **kwargs)
-
-logging.user = config["user"]
-logging.add_handler(seismic_log)
 
 #
 # Filesystem
@@ -188,7 +142,10 @@ class Storage(object):
         return self.settings[key]
 
     def __repr__(self):
-        return "storage ID:{} ({})".format(self.id, self["title"])
+        r = f"storage ID:{self.id}"
+        if self.get("title"):
+            r += f" ({self['title']})"
+        return r
 
     def get(self, key, default=None):
         return self.settings.get(key, default)
@@ -244,5 +201,8 @@ class Storages(object):
 
     def __iter__(self):
         return config["storages"].__iter__()
+
+    def items(self):
+        return [(id_storage, self[id_storage]) for id_storage in config["storages"]]
 
 storages = Storages()
