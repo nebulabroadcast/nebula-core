@@ -23,10 +23,10 @@ def format_integer(meta_type, value, **kwargs):
     result = kwargs.get("result", "alias")
     value = int(value)
 
-    if not value and meta_type.settings.get("hide_null", False):
+    if (not value) and meta_type.settings.get("hide_null", False):
         alias = ""
 
-    if meta_type.key == "file/size":
+    elif meta_type.key == "file/size":
         alias = format_filesize(value)
 
     elif meta_type.key == "id_folder":
@@ -144,7 +144,11 @@ def format_select(meta_type, value, **kwargs):
     elif result == "full":
         result = []
         has_zero = has_selected = False
-        for csval in cs.data:
+        if (not value in cs.data) and (value in cs.csdata):
+            adkey = [value]
+        else:
+            adkey = []
+        for csval in cs.data + adkey:
             if csval == "0":
                 has_zero = True
             if value == csval:
@@ -205,7 +209,12 @@ def format_list(meta_type, value, **kwargs):
 
     elif result == "full":
         result = []
-        for csval in cs.data:
+        adkey = []
+        for v in value:
+            if (not v in cs.data) and (v in cs.csdata):
+                adkey.append(v)
+
+        for csval in cs.data+adkey:
             role = cs.role(csval)
             if role == "hidden":
                 continue
