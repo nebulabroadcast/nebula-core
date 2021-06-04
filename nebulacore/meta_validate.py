@@ -21,14 +21,10 @@ def validate_default(meta_type, value):
     return str(value)
 
 def validate_string(meta_type, value):
-    if type(value) in (int, float):
-        return str(value)
-    return to_unicode(value).strip()
+    return str(value).strip()
 
 def validate_text(meta_type, value):
-    if type(value) in (int, float):
-        return str(value)
-    return to_unicode(value).strip()
+    return str(value).strip()
 
 def validate_integer(meta_type, value):
     if not value:
